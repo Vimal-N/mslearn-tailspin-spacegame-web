@@ -4,7 +4,13 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
 trigger:
-- '*'
+  branches:
+    include:
+    - '*'     # this means build all branches when pushed to Remote
+
+  paths:
+    exclude:
+     - docs/* # this excludes the doc folder update  
 
 pool:
   vmImage: ubuntu-latest
