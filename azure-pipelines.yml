@@ -13,7 +13,8 @@ trigger:
      - docs/* # this excludes the doc folder update  
 
 pool:
-  vmImage: 'MyAgentPool' #ubuntu-latest
+  #vmImage: ubuntu-latest
+  name : 'MyAgentPool'
   demands: # items in demands lets azure know what are the items we need preinstalled in our vm image
     - npm
 
