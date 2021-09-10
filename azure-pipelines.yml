@@ -13,16 +13,18 @@ trigger:
      - docs/* # this excludes the doc folder update  
 
 pool:
-  vmImage: ubuntu-latest
-  demands:
+  vmImage: 'MyAgentPool' #ubuntu-latest
+  demands: # items in demands lets azure know what are the items we need preinstalled in our vm image
     - npm
 
+# declaring variable which are to be reusable in various build step
 variables:
   buildConfiguration: 'Release'
   wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
   dotnetSdkVersion: '5.x'
 
-steps:
+# build steps are defined
+steps: 
 - task: UseDotNet@2
   displayName: 'Use .NET SDK $(dotnetSdkVersion)'
   inputs:
@@ -48,6 +50,7 @@ steps:
   displayName: 'Write build info'
   workingDirectory: $(wwwrootDir)
 
+# get Artifacts from azure artifacts
 - task: NuGetCommand@2
   displayName: 'Restore project dependencies'
   inputs:
