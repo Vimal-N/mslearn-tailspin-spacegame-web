@@ -88,7 +88,7 @@ stages:
           displayName: 'Publish Artifact: drop'
           condition: succeeded()
 
-  - stage: 'Deploy_to_dev'
+  - stage: 'Dev'
     displayName: 'Deploy app to Dev'
     dependsOn: Build
     condition: |
