@@ -12,52 +12,92 @@ trigger:
     exclude:
      - docs/* # this excludes the doc folder update  
 
-pool:
-  vmImage: ubuntu-latest
-  demands:
-    - npm
+# creating different stages in the pipeline
+# first stage is build
+# next stage is deploy app to Azure app service
 
 variables:
   buildConfiguration: 'Release'
-  wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
-  dotnetSdkVersion: '5.x'
+  buildProjectPackageName: 'Tailspin.SpaceGame.Web'
 
-steps:
-- task: UseDotNet@2
-  displayName: 'Use .Net SDK $(dotnetSdkVersion)'
-  inputs:
-    packageType: sdk
-    version: $(dotnetSdkVersion)
+stages:
+  - stage: 'Build' 
+    displayName: 'Build the web application'
+    jobs:
+      - job: 'Build'
+        displayName: 'Build job'
+        pool:
+          vmImage: ubuntu-latest
+          demands: 
+            - npm
 
-- task: Npm@1
-  displayName: 'Run npm install'
-  inputs:
-    verbose: false
+        variables:
+          wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
+          dotnetSdkVersion: '5.x'
 
-- script: './node_modules/.bin/node-sass $(wwwrootDir) --output $(wwwrootDir)'
-  displayName: 'Compile Sass assets'
+        # build steps are defined
+        steps: 
+        - task: UseDotNet@2
+          displayName: 'Use .NET SDK $(dotnetSdkVersion)'
+          inputs:
+            packageType: sdk
+            version: '$(dotnetSdkVersion)'
 
-- task: gulp@1
-  displayName: 'Run gulp tasks'
+        - task: NuGetToolInstaller@0
+          inputs:
+            versionSpec: '5.9.1'
 
-- script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
-  displayName: 'Write build info'
-  workingDirectory: $(wwwrootDir)
+        - task: Npm@1
+          displayName: 'Run npm install'
+          inputs:
+            verbose: false
 
-- task: DotNetCoreCLI@2
-  displayName: 'Restore project dependencies'
-  inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
+        - script: './node_modules/.bin/node-sass $(wwwrootDir) --output $(wwwrootDir)'
+          displayName: 'Compile Sass assets'
 
-# - template: templates/build.yml
-#   parameters:
-#     buildConfiguration: 'Debug'
+        - task: gulp@1
+          displayName: 'Run gulp tasks'
 
-- template: templates/build.yml
-  parameters:
-    buildConfiguration: 'Release'
+        - script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
+          displayName: 'Write build info'
+          workingDirectory: $(wwwrootDir)
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: drop'
-  condition: succeeded()
+        # get Artifacts from azure artifacts
+        - task: NuGetCommand@2
+          displayName: 'Restore project dependencies'
+          inputs:
+            command: 'restore'
+            restoreSolution: '**/*.sln'
+            feedsToUse: 'select'
+            vstsFeed: '$(System.TeamProject)/Tailspin.SpaceGame.Web.Models'
+
+        - template: templates/build.yml
+          parameters:
+            buildConfiguration: 'Release'
+
+        - task: PublishBuildArtifacts@1
+          displayName: 'Publish Artifact: drop'
+          condition: succeeded()
+
+  - stage: 'Deploy'
+    displayName: 'Deploy the web application'
+    dependsOn: Build
+    jobs:
+    - deployment: Deploy
+      pool:
+        vmImage: 'ubuntu-20.04'
+      environment: dev
+      variables:
+      - group: 'tailspin web app variable group - dev'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - download: current
+              artifact: drop
+            - task: AzureWebApp@1
+              displayName: 'Azure App Service Deploy: website'
+              inputs:
+                azureSubscription: 'Resource Manager - Tailspin - Space Game'
+                appName: '$(WebAppName)'
+                package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/$(buildProjectPackageName).zip'
