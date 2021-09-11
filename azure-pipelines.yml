@@ -87,7 +87,7 @@ stages:
         vmImage: 'ubuntu-20.04'
       environment: dev
       variables:
-      - group: Release
+      - group: 'tailspin web app variable group - dev'
       strategy:
         runOnce:
           deploy:
