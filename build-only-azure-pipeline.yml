@@ -51,7 +51,7 @@ steps:
   displayName: 'Write build info'
   workingDirectory: $(wwwrootDir)
 
-# get Artifacts from azure artifacts
+# get Artifacts from azure artifacts -
 - task: NuGetCommand@2
   displayName: 'Restore project dependencies'
   inputs:
@@ -77,3 +77,5 @@ steps:
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: drop'
   condition: succeeded()
+
+# adding comment to force build process
