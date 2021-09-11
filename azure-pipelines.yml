@@ -79,7 +79,7 @@ stages:
           condition: succeeded()
 
   - stage: 'Deploy'
-      displayName: 'Deploy the web application to Azure app Service'
+      displayName: 'Deploy the web application'
       dependsOn: Build
       jobs:
       - deployment: Deploy
@@ -98,5 +98,5 @@ stages:
                 displayName: 'Azure App Service Deploy: website'
                 inputs:
                   azureSubscription: 'Resource Manager - Tailspin - Space Game'
-                  appName: '$(WebAppName)' # this variable will be retrieved from environment variables we have defined under Library -> dev
-                  package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'  
+                  appName: '$(WebAppName)'
+                  package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
